@@ -4,19 +4,24 @@ declare(strict_types=1);
 
 namespace Basis\Nats\Message;
 
+use Basis\Nats\Client;
 use Exception;
+use LogicException;
 
 class Msg extends Prototype
 {
-    public $hlength = null;
-    public $replyTo = null;
-    public $length;
-    public $payload;
-    public $sid;
-    public $subject;
-    public $timestampNanos = null;
+    public int $length;
+    public Payload $payload;
+    public string $sid;
+    public string $subject;
 
-    public static function create(string $data): Prototype
+    public ?int $hlength = null;
+    public ?int $timestampNanos = null;
+    public ?string $replyTo = null;
+
+    private ?Client $client = null;
+
+    public static function create(string $data): self
     {
         $args = explode(' ', $data, 5);
         $values = [];
@@ -58,9 +63,27 @@ class Msg extends Prototype
         return new self($values);
     }
 
-    public function __toString(): string
+    public function ack(): void
     {
-        return $this->payload->body;
+        $this->reply(new Ack([
+            'subject' => $this->replyTo
+        ]));
+    }
+
+    public function getClient(): ?Client
+    {
+        return $this->client;
+    }
+
+    public function nack(float $delay = 0): void
+    {
+        $this->reply(new Ack([
+            'command' => '-NAK',
+            'subject' => $this->replyTo,
+            'payload' => Payload::parse([
+                'delay' => $delay,
+            ]),
+        ]));
     }
 
     public function parse($payload): self
@@ -100,9 +123,39 @@ class Msg extends Prototype
         return $this;
     }
 
+    public function progress(): void
+    {
+        $this->reply(new Ack([
+            'command' => '+WPI',
+            'subject' => $this->replyTo,
+        ]));
+    }
+
     public function render(): string
     {
         return 'MSG ' . json_encode($this);
+    }
+
+    public function reply($data): void
+    {
+        if (!$this->replyTo) {
+            throw new LogicException("Invalid replyTo property");
+        }
+        if ($data instanceof Prototype) {
+            $this->client->connection->sendMessage($data);
+        } else {
+            $this->client->publish($this->replyTo, $data);
+        }
+    }
+
+    public function setClient($client): void
+    {
+        $this->client = $client;
+    }
+
+    public function __toString(): string
+    {
+        return $this->payload->body;
     }
 
     private static function tryParseMessageTime(array $values): array

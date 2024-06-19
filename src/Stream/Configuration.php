@@ -36,7 +36,7 @@ class Configuration
         return $this
             ->setDiscardPolicy($array['discard'])
             ->setMaxConsumers($array['max_consumers'])
-            ->setReplicas($array['replicas'])
+            ->setReplicas($array['replicas'] ?? $array['num_replicas'])
             ->setRetentionPolicy($array['retention'])
             ->setStorageBackend($array['storage'])
             ->setSubjects($array['subjects']);
@@ -209,7 +209,7 @@ class Configuration
             'max_msg_size' => $this->getMaxMessageSize(),
             'max_msgs_per_subject' => $this->getMaxMessagesPerSubject(),
             'name' => $this->getName(),
-            'replicas' => $this->getReplicas(),
+            'num_replicas' => $this->getReplicas(),
             'retention' => $this->getRetentionPolicy(),
             'storage' => $this->getStorageBackend(),
             'subjects' => $this->getSubjects(),

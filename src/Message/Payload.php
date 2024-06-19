@@ -24,7 +24,7 @@ class Payload
             return new self(json_encode($data));
         }
 
-        return new self("");
+        return new self('');
     }
 
 
