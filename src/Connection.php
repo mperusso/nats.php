@@ -66,6 +66,12 @@ class Connection
         while (true) {
             $message = null;
             $line = stream_get_line($this->socket, 1024, "\r\n");
+            if ($line === false) {
+                $info = stream_get_meta_data($this->socket);
+                if ($info['eof']) {
+                    $this->processException(new LogicException('Socket read timeout'));
+                }
+            }
             $now = microtime(true);
             if ($line) {
                 $message = Factory::create($line);
