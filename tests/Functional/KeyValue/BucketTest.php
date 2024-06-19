@@ -62,7 +62,7 @@ class BucketTest extends FunctionalTestCase
             ]
         ]));
 
-        $this->assertCount(1, json_decode($bucket->get('service_handlers')));
+        $this->assertCount(1, json_decode((string) $bucket->get('service_handlers')));
     }
 
     public function testGetAll()

@@ -16,24 +16,33 @@ use Psr\Log\LoggerInterface;
 
 class Client
 {
-    public readonly Api $api;
+    public $api;
 
-    private string $name = '';
+    public $name = '';
 
     /** @var array<Closure|Queue> */
-    private array $handlers = [];
-    private array $subscriptions = [];
+    private $handlers = [];
+    private $subscriptions = [];
+    
+    public $configuration;
+    
+    public $logger;
+    
+    public $connection;
 
-    private bool $skipInvalidMessages = false;
+    private $skipInvalidMessages = false;
 
     public function __construct(
-        public readonly Configuration $configuration = new Configuration(),
-        public ?LoggerInterface $logger = null,
-        public ?Connection $connection = null,
+        Configuration $configuration = null,
+        ?LoggerInterface $logger = null,
+        ?Connection $connection = null
     ) {
+        $this->configuration = $configuration ?? new Configuration();
+        $this->logger = $logger;
+        $this->connection = $connection;
         $this->api = new Api($this);
         if (!$connection) {
-            $this->connection = new Connection(client: $this, logger: $logger);
+            $this->connection = new Connection($this, $logger);
         }
     }
 
@@ -59,7 +68,7 @@ class Client
         return $result;
     }
 
-    public function dispatch(string $name, mixed $payload, ?float $timeout = null)
+    public function dispatch(string $name, $payload, ?float $timeout = null)
     {
         if ($timeout === null) {
             $timeout = $this->configuration->timeout;
@@ -97,7 +106,7 @@ class Client
         return $this->connection->ping();
     }
 
-    public function publish(string $name, mixed $payload, ?string $replyTo = null): self
+    public function publish(string $name, $payload, ?string $replyTo = null): self
     {
         $this->connection->sendMessage(new Publish([
             'payload' => Payload::parse($payload),
@@ -108,7 +117,7 @@ class Client
         return $this;
     }
 
-    public function request(string $name, mixed $payload, Closure $handler): self
+    public function request(string $name, $payload, Closure $handler): self
     {
         $replyTo = $this->configuration->inboxPrefix . '.' . bin2hex(random_bytes(16));
 
@@ -123,17 +132,17 @@ class Client
         return $this;
     }
 
-    public function subscribe(string $name, ?Closure $handler = null): self|Queue
+    public function subscribe(string $name, ?Closure $handler = null)
     {
         return $this->doSubscribe($name, null, $handler);
     }
 
-    public function subscribeQueue(string $name, string $group, ?Closure $handler = null): self|Queue
+    public function subscribeQueue(string $name, string $group, ?Closure $handler = null)
     {
         return $this->doSubscribe($name, $group, $handler);
     }
 
-    public function unsubscribe(string|Queue $name): self
+    public function unsubscribe($name): self
     {
         if ($name instanceof Queue) {
             $name = $name->subject;
@@ -166,7 +175,7 @@ class Client
         return $this;
     }
 
-    public function process(null|int|float $timeout = 0, bool $reply = true): mixed
+    public function process($timeout = 0, bool $reply = true)
     {
         $message = $this->connection->getMessage($timeout);
 
@@ -193,7 +202,7 @@ class Client
         }
     }
 
-    private function doSubscribe(string $subject, ?string $group, ?Closure $handler = null): self|Queue
+    private function doSubscribe(string $subject, ?string $group, ?Closure $handler = null)
     {
         $sid = bin2hex(random_bytes(4));
         if ($handler == null) {

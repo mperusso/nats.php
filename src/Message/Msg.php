@@ -10,18 +10,18 @@ use LogicException;
 
 class Msg extends Prototype
 {
-    public int $length;
-    public Payload $payload;
-    public string $sid;
-    public string $subject;
+    public $length;
+    public $payload;
+    public $sid;
+    public $subject;
 
-    public ?int $hlength = null;
-    public ?int $timestampNanos = null;
-    public ?string $replyTo = null;
+    public $hlength = null;
+    public $timestampNanos = null;
+    public $replyTo = null;
 
-    private ?Client $client = null;
+    private $client = null;
 
-    public static function create(string $data): self
+    public static function create(string $data)
     {
         $args = explode(' ', $data, 5);
         $values = [];
@@ -86,7 +86,7 @@ class Msg extends Prototype
         ]));
     }
 
-    public function parse($payload): self
+    public function parse($payload)
     {
         $headers = [];
         if ($this->hlength) {
@@ -161,7 +161,7 @@ class Msg extends Prototype
     private static function tryParseMessageTime(array $values): array
     {
         if (
-            !array_key_exists('replyTo', $values) || !str_starts_with($values['replyTo'], '$JS.ACK')
+            !array_key_exists('replyTo', $values) || !(substr($values['replyTo'], 0, strlen('$JS.ACK')) === '$JS.ACK')
         ) {
             # This is not a JetStream message
             return $values;

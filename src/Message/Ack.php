@@ -6,10 +6,10 @@ namespace Basis\Nats\Message;
 
 class Ack extends Prototype
 {
-    public string $subject;
-    public string $command = '+ACK';
+    public $subject;
+    public $command = '+ACK';
 
-    public ?Payload $payload = null;
+    public $payload = null;
 
     public function render(): string
     {

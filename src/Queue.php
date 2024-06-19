@@ -10,14 +10,18 @@ use Exception;
 
 class Queue
 {
-    private array $queue = [];
-    private float $timeout;
-    private ?Publish $launcher = null;
+    private $queue = [];
+    private $timeout;
+    private $launcher = null;
+    public $client;
+    public $subject;
 
     public function __construct(
-        public readonly Client $client,
-        public readonly string $subject,
+        Client $client,
+        string $subject
     ) {
+        $this->client = $client;
+        $this->subject = $subject;
         $this->timeout = $client->configuration->timeout;
     }
 

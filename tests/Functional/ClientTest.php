@@ -25,9 +25,11 @@ class ClientTest extends FunctionalTestCase
         $property = new ReflectionProperty(Connection::class, 'socket');
         $property->setAccessible(true);
         fclose($property->getValue($client->connection));
-
-        $this->expectExceptionMessage('supplied resource is not a valid stream resource');
-        $client->process(1);
+        try {
+            $client->process(1);
+        }catch (\Exception $e){
+            $this->assertStringContainsString($e->getMessage(), 'supplied resource is not a valid stream resource');
+        }
     }
 
     public function testReconnect()

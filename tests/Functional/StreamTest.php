@@ -188,7 +188,9 @@ class StreamTest extends FunctionalTestCase
         $consumer->setBatching(1)->setIterations(2)
             ->handle(function ($response) use ($consumer) {
                 $consumer->interrupt();
-                $this->logger?->info('interrupt!!');
+                if ($this->logger) {
+                    $this->logger->info('interrupt!!');
+                }
             });
 
         $this->assertWrongNumPending($consumer, 3);
@@ -196,7 +198,9 @@ class StreamTest extends FunctionalTestCase
         $consumer->setBatching(2)->setIterations(1)
             ->handle(function ($response) use ($consumer) {
                 $consumer->interrupt();
-                $this->logger?->info('interrupt!!');
+                if ($this->logger) {
+                    $this->logger->info('interrupt!!');
+                }
             });
 
         $this->assertWrongNumPending($consumer, 1);

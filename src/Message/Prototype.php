@@ -10,13 +10,13 @@ abstract class Prototype
 {
     abstract public function render(): string;
 
-    public static function create(string $data): self
+    public static function create(string $data)
     {
         // @phan-suppress-next-line PhanTypeInstantiateAbstractStatic
         return new static(Payload::parse($data));
     }
 
-    public function __construct(array|Payload|null $payload = null)
+    public function __construct($payload = null)
     {
         if ($payload === null) {
             return;

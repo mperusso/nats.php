@@ -25,7 +25,9 @@ class SubjectTest extends FunctionalTestCase
         $queue->setTimeout(0.1);
 
         $client->publish('handler', 'tester');
-        $client->logger?->info('published');
+        if ($this->logger) {
+            $client->logger->info('published');
+        }
         $message = $queue->fetch(1);
         $this->assertNotNull($message);
         $this->assertSame("$message->payload", 'tester');
@@ -238,7 +240,7 @@ class SubjectTest extends FunctionalTestCase
 
         $subjects = ['hello.request1', 'hello.request2'];
         foreach ($subjects as $subject) {
-            $client->subscribe($subject, $this->greet(...));
+            $client->subscribe($subject, Closure::fromCallable([$this, 'greet']));
         }
         self::assertCount(2, $property->getValue($client));
 
@@ -256,7 +258,7 @@ class SubjectTest extends FunctionalTestCase
 
         $subjects = ['hello.request1', 'hello.request2'];
         foreach ($subjects as $subject) {
-            $client->subscribe($subject, $this->greet(...));
+            $client->subscribe($subject, Closure::fromCallable([$this, 'greet']));
         }
         self::assertCount(2, $property->getValue($client));
 

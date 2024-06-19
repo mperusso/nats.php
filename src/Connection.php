@@ -24,20 +24,25 @@ class Connection
     private $socket;
     private $context;
 
-    private float $activityAt = 0;
-    private float $pingAt = 0;
-    private float $pongAt = 0;
-    private float $prolongateTill = 0;
+    private $activityAt = 0;
+    private $pingAt = 0;
+    private $pongAt = 0;
+    private $prolongateTill = 0;
 
-    private ?Authenticator $authenticator;
-    private Configuration $config;
-    private Connect $connectMessage;
-    private Info $infoMessage;
+    private $authenticator;
+    private $config;
+    private $connectMessage;
+    private $infoMessage;
+
+    private $client;
+    private $logger;
 
     public function __construct(
-        private Client $client,
-        public ?LoggerInterface $logger = null,
+        Client $client,
+        LoggerInterface $logger = null
     ) {
+        $this->client = $client;
+        $this->logger = $logger;
         $this->authenticator = Authenticator::create($client->configuration);
         $this->config = $client->configuration;
     }
@@ -52,7 +57,7 @@ class Connection
         return $this->infoMessage;
     }
 
-    public function getMessage(null|int|float $timeout = 0): ?Message
+    public function getMessage($timeout = 0): ?Message
     {
         $now = microtime(true);
         $max = $now + $timeout;
@@ -69,10 +74,14 @@ class Connection
                     $payload = $this->getPayload($message->length);
                     $message->parse($payload);
                     $message->setClient($this->client);
-                    $this->logger?->debug('receive ' . $line . $payload);
+                    if ($this->logger) {
+                        $this->logger->debug('receive ' . $line . $payload);
+                    }
                     return $message;
                 }
-                $this->logger?->debug('receive ' . $line);
+                if ($this->logger) {
+                    $this->logger->debug('receive ' . $line);
+                }
                 if ($message instanceof Ok) {
                     continue;
                 } elseif ($message instanceof Ping) {
@@ -98,7 +107,9 @@ class Connection
                 break;
             }
             if ($message && $now < $max) {
-                $this->logger?->debug('sleep', compact('max', 'now'));
+                if ($this->logger) {
+                    $this->logger->debug('sleep', compact('max', 'now'));
+                }
                 $this->config->delay($iteration++);
             }
         }
@@ -129,7 +140,9 @@ class Connection
         $line = $message->render() . "\r\n";
         $length = strlen($line);
 
-        $this->logger?->debug('send ' . $line);
+        if ($this->logger) {
+            $this->logger->debug('send ' . $line);
+        }
 
         while (strlen($line)) {
             try {
@@ -152,7 +165,7 @@ class Connection
 
         if ($message instanceof Publish) {
             if (strpos($message->subject, '$JS.API.CONSUMER.MSG.NEXT.') === 0) {
-                $prolongate = $message->payload->expires / 1_000_000_000;
+                $prolongate = $message->payload->expires / 1000000000;
                 $this->prolongateTill = microtime(true) + $prolongate;
             }
         }
@@ -252,8 +265,8 @@ class Connection
                 $this->config->delay($iteration++);
                 continue;
             }
-            if (strlen($payloadLine) != $length) {
-                $this->logger?->debug(
+            if (strlen($payloadLine) != $length && $this->logger) {
+                $this->logger->debug(
                     'got ' . strlen($payloadLine) . '/' . $length . ': ' . $payloadLine
                 );
             }
@@ -264,7 +277,9 @@ class Connection
 
     private function processException(Throwable $e)
     {
-        $this->logger?->error($e->getMessage(), ['exception' => $e]);
+        if ($this->logger) {
+            $this->logger->error($e->getMessage(), ['exception' => $e]);
+        }
 
         if (!$this->config->reconnect) {
             throw $e;
