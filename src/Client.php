@@ -23,11 +23,11 @@ class Client
     /** @var array<Closure|Queue> */
     private $handlers = [];
     private $subscriptions = [];
-    
+
     public $configuration;
-    
+
     public $logger;
-    
+
     public $connection;
 
     private $skipInvalidMessages = false;
@@ -109,10 +109,10 @@ class Client
     public function publish(string $name, $payload, ?string $replyTo = null): self
     {
         $this->connection->sendMessage(new Publish([
-            'payload' => Payload::parse($payload),
-            'replyTo' => $replyTo,
-            'subject' => $name,
-        ]));
+                                                       'payload' => Payload::parse($payload),
+                                                       'replyTo' => $replyTo,
+                                                       'subject' => $name,
+                                                   ]));
 
         return $this;
     }
@@ -212,10 +212,10 @@ class Client
         }
 
         $this->connection->sendMessage(new Subscribe([
-            'sid' => $sid,
-            'subject' => $subject,
-            'group' => $group,
-        ]));
+                                                         'sid' => $sid,
+                                                         'subject' => $subject,
+                                                         'group' => $group,
+                                                     ]));
 
         $this->subscriptions[] = [
             'name' => $subject,

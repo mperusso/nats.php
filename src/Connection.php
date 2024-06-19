@@ -306,9 +306,9 @@ class Connection
 
         foreach ($this->client->getSubscriptions() as $subscription) {
             $this->sendMessage(new Subscribe([
-                'sid' => $subscription['sid'],
-                'subject' => $subscription['name'],
-            ]));
+                                                 'sid' => $subscription['sid'],
+                                                 'subject' => $subscription['name'],
+                                             ]));
         }
     }
 
